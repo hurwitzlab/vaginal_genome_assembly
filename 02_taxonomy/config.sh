@@ -1,0 +1,10 @@
+export ID=MY_ID
+export ACCESSIONS=MY_ACCESSIONS
+export WORK_DIR=
+export DATA_DIR=
+export FASTQ_DIR=
+export KRAKEN2=/path_to_containers/kraken2:2.1.3--pl5321hdcf5f25_0.sif
+export BRACKEN=/path_to_containers/bracken:2.8--py39h1f90b4d_1.sif
+export KRAKENTOOLS=/path_to_containers/krakentools:1.2--pyh5e36f6f_0.sif
+export DB_DIR=/path_to_databases/kraken2/k2_pluspf_20230605
+export KMER_SIZE=100

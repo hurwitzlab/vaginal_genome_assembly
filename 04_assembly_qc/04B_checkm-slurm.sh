@@ -26,4 +26,4 @@ if [[ ! -d "$CHECKM_OUTDIR" ]]; then
 fi
 
 ### Run checkm
-apptainer run ${CHECKM} checkm2         predict --threads 24         --input $UNICYCLER_DIR         -x fasta         --output-directory $OUTDIR/${SAMPLE_ID}         --database_path /groups/bhurwitz/databases/checkm2_database/uniref100.KO.1.dmnd  
+apptainer run ${CHECKM} checkm2         predict --threads ${SLURM_CPUS_PER_TASK}         --input $UNICYCLER_DIR         -x fasta         --output-directory $OUTDIR/${SAMPLE_ID}         --database_path /groups/bhurwitz/databases/checkm2_database/uniref100.KO.1.dmnd  
