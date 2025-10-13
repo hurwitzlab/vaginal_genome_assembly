@@ -1,0 +1,40 @@
+#!/bin/bash
+# --------------------------------------------------
+# Request resources here
+# --------------------------------------------------
+#BSUB -J 01B_run_trimmomatic-lsf[1-15]%15  # job name, with array number to run in parallel
+#BSUB -n 2                                 # number of CPUs required per task
+#BSUB -q shared_memory                     # the queue to run on
+#BSUB -R "span[hosts=1]"                   # number of hosts to spread the jobs across, 1 host used here
+#BSUB -R "rusage[mem=8GB]"                 # required total memory for the job 
+#BSUB -o "./output.%J_%I.log"              # standard output file (%J is job name, %I is the array number)
+#BSUB -e "./error.%J_%I.log"               # standard error file (%J is job ID, %I is the array number)
+#BSUB -W 10:00                             # time to run
+# --------------------------------------------------
+# Load modules here
+# --------------------------------------------------
+
+# --------------------------------------------------
+# Execute commands here
+# --------------------------------------------------
+# echo for log
+echo "job started"; pwd; hostname; date
+
+# source config gile and get sample name from input list based on job array index
+source ./config.sh
+export SAMPLE=`head -n +${LSB_JOBINDEX} $IN_LIST | tail -n 1`
+
+# make the output directories 
+TRIM_DIR="${WORK_DIR}/trimmed_reads"
+UNPAIR_DIR="${WORK_DIR}/unpaired_reads"
+
+echo "Running Trimmomatic on sample $SAMPLE" 
+apptainer run ${TRIMMOMATIC} trimmomatic PE -phred33 -threads 4 \
+    ${FASTQ_DIR}/${SAMPLE}_R1_001.fastq.gz ${FASTQ_DIR}/${SAMPLE}_R2_001.fastq.gz \
+    ${TRIM_DIR}/${SAMPLE}_R1_001.fastq.gz ${UNPAIR_DIR}/${SAMPLE}_R1_001.fastq.gz \
+    ${TRIM_DIR}/${SAMPLE}_R2_001.fastq.gz ${UNPAIR_DIR}/${SAMPLE}_R2_001.fastq.gz \
+    ILLUMINACLIP:TruSeq3-PE-2.fa:2:30:10 SLIDINGWINDOW:4:20 MINLEN:100 HEADCROP:15
+
+
+# print date for log
+echo "job ended"; date

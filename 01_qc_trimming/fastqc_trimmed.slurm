@@ -2,7 +2,7 @@
 # --------------------------------------------------
 # Request resources here
 # --------------------------------------------------
-#SBATCH --job-name=fastqc               # job name
+#SBATCH --job-name=fastqc_trimmed       # job name
 #SBATCH --ntasks=1                      # number of CPUs required 
 #SBATCH --cpus-per-task=1               # number of CPU cores per task 
 #SBATCH --nodes=1                       # number of nodes
@@ -11,7 +11,7 @@
 #SBATCH --partition=standard            # partition name (i.e. standard, windfall)
 #SBATCH --account=your_account          # account name (name of your group)                     
 #SBATCH --output=process-%j.out         # standard output file name (%j expands to jobID)
-#SBATCH --error=process-%j.err          # standard error file name (%j expands to jobID)                            
+#SBATCH --error=process-%j.err          # standard error file name (%j expands to jobID)                         
 
 # --------------------------------------------------
 # Load modules here
@@ -29,19 +29,20 @@ source ./config.sh
 export SAMPLE=`head -n +${SLURM_ARRAY_TASK_ID} $IN_LIST | tail -n 1`
 
 # run FastQC
-echo "Running FastQC on sample $SAMPLE"                       # print sample name to log
-apptainer run ${FASTQC} fastqc $FASTQ_DIR/${SAMPLE}_*.fastq*
+echo "Running FastQC on sample $SAMPLE"
+apptainer run ${FASTQC} fastqc ${WORK_DIR}/trimmed_reads/${SAMPLE}_*.fastq*
 
 # move FastQC results to a separate directory and copy to local directory for viewing
 # create directory if it does not exist
-TRIM_DIR="${WORK_DIR}/before_qc_trimming"
+TRIM_DIR="${WORK_DIR}/after_qc_trimming"
 if [[ ! -d "$TRIM_DIR" ]]; then
   echo "$TRIM_DIR does not exist. Directory created"
   mkdir -p $TRIM_DIR
 fi
+
 #  move files
-mv $FASTQ_DIR/${SAMPLE}_*_fastqc.html $TRIM_DIR
-mv $FASTQ_DIR/${SAMPLE}_*_fastqc.zip $TRIM_DIR
+mv ${WORK_DIR}/trimmed_reads/${SAMPLE}_*_fastqc.html $TRIM_DIR
+mv ${WORK_DIR}/trimmed_reads/${SAMPLE}_*_fastqc.zip $TRIM_DIR
 cp -r $TRIM_DIR ~/01_qc_trimming
 
 # print date for log

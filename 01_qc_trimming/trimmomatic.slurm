@@ -1,18 +1,17 @@
 #!/bin/bash
 # --------------------------------------------------
 # Request resources here
-# --------------------------------------------------
-#SBATCH --job-name=fastqc               # job name
+# --------------------------------------------------         
+#SBATCH --job-name=trimmomatic          # job name
 #SBATCH --ntasks=1                      # number of CPUs required 
-#SBATCH --cpus-per-task=1               # number of CPU cores per task 
+#SBATCH --cpus-per-task=4               # number of CPU cores per task 
 #SBATCH --nodes=1                       # number of nodes
-#SBATCH --mem-per-cpu=4000              # memory per CPU core in MB (see also --mem) 
+#SBATCH --mem-per-cpu=8000              # memory per CPU core in MB (see also --mem) 
 #SBATCH --time=10:00:00                 # time limit hrs:min:sec
 #SBATCH --partition=standard            # partition name (i.e. standard, windfall)
 #SBATCH --account=your_account          # account name (name of your group)                     
 #SBATCH --output=process-%j.out         # standard output file name (%j expands to jobID)
-#SBATCH --error=process-%j.err          # standard error file name (%j expands to jobID)                            
-
+#SBATCH --error=process-%j.err          # standard error file name (%j expands to jobID)
 # --------------------------------------------------
 # Load modules here
 # --------------------------------------------------
@@ -28,21 +27,16 @@ echo "job started"; pwd; hostname; date
 source ./config.sh
 export SAMPLE=`head -n +${SLURM_ARRAY_TASK_ID} $IN_LIST | tail -n 1`
 
-# run FastQC
-echo "Running FastQC on sample $SAMPLE"                       # print sample name to log
-apptainer run ${FASTQC} fastqc $FASTQ_DIR/${SAMPLE}_*.fastq*
+# make the output directories 
+TRIM_DIR="${WORK_DIR}/trimmed_reads"
+UNPAIR_DIR="${WORK_DIR}/unpaired_reads"
 
-# move FastQC results to a separate directory and copy to local directory for viewing
-# create directory if it does not exist
-TRIM_DIR="${WORK_DIR}/before_qc_trimming"
-if [[ ! -d "$TRIM_DIR" ]]; then
-  echo "$TRIM_DIR does not exist. Directory created"
-  mkdir -p $TRIM_DIR
-fi
-#  move files
-mv $FASTQ_DIR/${SAMPLE}_*_fastqc.html $TRIM_DIR
-mv $FASTQ_DIR/${SAMPLE}_*_fastqc.zip $TRIM_DIR
-cp -r $TRIM_DIR ~/01_qc_trimming
+echo "Running Trimmomatic on sample $SAMPLE"
+apptainer run ${TRIMMOMATIC} trimmomatic PE -phred33 -threads 4 \
+    ${FASTQ_DIR}/${SAMPLE}_R1_001.fastq.gz ${FASTQ_DIR}/${SAMPLE}_R2_001.fastq.gz \
+    ${TRIM_DIR}/${SAMPLE}_R1_001.fastq.gz ${UNPAIR_DIR}/${SAMPLE}_R1_001.fastq.gz \
+    ${TRIM_DIR}/${SAMPLE}_R2_001.fastq.gz ${UNPAIR_DIR}/${SAMPLE}_R2_001.fastq.gz \
+    ILLUMINACLIP:TruSeq3-PE-2.fa:2:30:10 SLIDINGWINDOW:4:20 MINLEN:100 HEADCROP:15
 
 # print date for log
 echo "job ended"; date
