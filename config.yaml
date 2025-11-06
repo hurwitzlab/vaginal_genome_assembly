@@ -1,0 +1,26 @@
+# Configuration file for vaginal genome assembly pipeline
+
+# List of sample names (without _R1/_R2 suffix)
+# These should match the names of your FASTQ files in the data/ directory
+samples:
+  - sample1
+  - sample2
+
+# Trimmomatic parameters
+trimmomatic:
+  # Path to adapter sequences file
+  adapters: "adapters/TruSeq3-PE.fa"
+  # Minimum quality at the start of reads
+  leading: 3
+  # Minimum quality at the end of reads
+  trailing: 3
+  # Sliding window trimming: <windowSize:requiredQuality>
+  slidingwindow: "4:15"
+  # Minimum length of reads to keep
+  minlen: 36
+
+# Kraken2 parameters
+kraken2:
+  # Path to Kraken2 database (for human read filtering)
+  # Download a standard database or build a custom one
+  database: "/path/to/kraken2/database"
