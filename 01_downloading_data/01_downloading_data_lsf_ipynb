@@ -1,0 +1,91 @@
+
+# CONVERT INTO JUPYTER NOTEBOOK!!!!!
+
+
+
+
+
+
+
+# 03. Login node script with GNU Parallel
+
+In some HPCs the compute nodes do not have internet access. This is the case of the NCSU Hazel HPC. This poses a challenge for some bioinformatics tasks, such as: 
+- Downloading databases and data, which is sometimes embedded in a pipeline
+- Installing tools that require internet connectivity
+
+When compute nodes lack internet access, these tasks must be performed on the login node. However, remember that we CANNOT run computationally intensive tasks on the login node. Some of these processes, like downloading large databases, can be resource-intensive and could violate cluster policies if executed directly on the login node without proper resource management. 
+
+To address this challenge, we'll learn how to use GNU Parallel to efficiently manage these tasks while respecting login node limitations.
+
+### What is GNU Parallel?
+
+GNU Parallel is a **command-line tool that allows you to execute multiple jobs simultaneously while controlling resource usage**. Think of it as a way to run several commands at once, but with intelligent management of how many processes run at any given time. Instead of running tasks sequentially (one after another) or launching them all at once (which could overwhelm the system), GNU Parallel lets you specify how many jobs should run in parallel. For example, if you need to download 100 datasets, you could tell GNU Parallel to download 4 at a time—as soon as one download finishes, it automatically starts the next one until all are complete.
+
+This controlled parallelization is particularly valuable on login nodes, where we need to be mindful of resource consumption while still completing tasks efficiently. By limiting the number of concurrent processes, GNU Parallel allows us to perform necessary downloads and installations **without monopolizing** the login node's resources or violating cluster policies. 
+
+It also provides useful features like progress monitoring, automatic retry of failed jobs, and the ability to resume interrupted work—making it an essential tool for managing data-intensive tasks in restricted HPC environments.
+
+---
+
+\
+
+### Example 1: Downloading data from SRA
+Let's see how to use GNU Parallel to download multiple datasets from the Sequence Read Archive (SRA) efficiently and responsibly on the login node.
+
+#### Basic Setup
+
+First, create a text file listing the SRA accession numbers you want to download. For example, create a file called `sra_accessions.txt`:
+
+```bash
+SRR28473915
+SRR28473916
+SRR28473917
+SRR28473918
+SRR28473919
+```
+
+#### Simple Parallel Download
+
+To download these datasets with GNU Parallel, limiting to 3 concurrent downloads:
+```bash
+#! /bin/bash
+
+# create some variables for a more clean script
+CPUS=3
+PARALLEL=/rs1/shares/brc/admin/tools/parallel-20250922/bin/parallel
+SRA_CONTAINER=/rs1/shares/brc/admin/containers/images/quay.io_biocontainers_sra-tools:3.2.1--h4304569_1.sif
+
+# load apptainer module
+module load apptainer
+
+# run gnu parallel downloads
+cat sra_accessions.txt | $PARALLEL -j $CPUS "apptainer exec $SRA_CONTAINER prefetch {}"
+```
+> Note: Make sure that you use double quotes `"..."` instead of single quotes `'...'` so that the variable `$SRA_CONTAINER` gets expanded to its actual value.
+
+This command reads each accession number from the file and passes it to `prefetch`. The `-j 3` flag ensures only 3 downloads run simultaneously, preventing system overload.
+
+
+#### More Robust Download with Progress Monitoring
+
+For a more informative and robust approach:
+```bash
+#! /bin/bash
+# create some variables for a more clean script
+CPUS=3
+PARALLEL=/rs1/shares/brc/admin/tools/parallel-20250922/bin/parallel
+JOBLOG=/your_workdir/path/download_log.txt
+SRA_CONTAINER=/rs1/shares/brc/admin/containers/images/quay.io_biocontainers_sra-tools:3.2.1--h4304569_1.sif
+
+# run gnu parallel downloads with joblog
+cat sra_accessions.txt | $PARALLEL -j $CPUS --progress --joblog $JOBLOG "apptainer exec $SRA_CONTAINER prefetch {}"
+```
+
+Key options explained:
+
+- `-j $CPUS`: Run 3 (`$CPUS`) jobs in parallel
+- `--progress`: Display a progress bar showing completed/remaining jobs
+- `--joblog $JOBLOG`: Create a log file (`download_log.txt`) tracking each job's status and timing
+- `&&` and `||`: Provide success/failure messages for each download
+
+---
